@@ -55,4 +55,7 @@
     <string name="itemTitle">Item Title</string>
     <string name="itemPrice">Item Price</string>
     <string name="remove">Remove</string>
+    <string name="orderDetails">Order Details</string>
+    <string name="orderedItems">Ordered Items</string>
+    <string name="writeReview">Write Review</string>
 </resources>

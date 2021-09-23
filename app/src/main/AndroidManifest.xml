@@ -16,8 +16,12 @@
         android:roundIcon="@id/icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.Grocery.NoActionBar">
-        <activity android:name=".activities.ShopDetailsActivity"
-            android:windowSoftInputMode="stateHidden"/><!--hide keyboard by default-->
+        <activity android:name=".activities.ShopReviewsActivity"></activity>
+        <activity android:name=".activities.WriteReviewActivity" />
+        <activity android:name=".activities.OrderDetailsUsersActivity" />
+        <activity
+            android:name=".activities.ShopDetailsActivity"
+            android:windowSoftInputMode="stateHidden" /> <!-- hide keyboard by default -->
         <activity android:name=".activities.EditProductActivity" />
         <activity android:name=".activities.AddPromoCodesActivity" />
         <activity android:name=".activities.PromotionCodesActivity" />

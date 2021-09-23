@@ -70,7 +70,7 @@ public class AdapterCartItem extends RecyclerView.Adapter<AdapterCartItem.Holder
                         .addColumn(new Column("Item_Quantity", new String[]{"text", "not null"}))
                         .doneTableColumn();
 
-                easyDB.deleteRow(1,id);
+                easyDB.deleteRow(1, id);
                 Toast.makeText(context, "Removed from cart...", Toast.LENGTH_SHORT).show();
 
                 //refresh list
@@ -78,13 +78,16 @@ public class AdapterCartItem extends RecyclerView.Adapter<AdapterCartItem.Holder
                 notifyItemChanged(position);
                 notifyDataSetChanged();
 
-                double tx = Double.parseDouble((((ShopDetailsActivity)context).allTotalPriceTv.getText().toString().trim().replace("$", "")));
-                double totalPrice = tx - Double.parseDouble(cost.replace("$",""));
-                double deliveryFee = Double.parseDouble((((ShopDetailsActivity)context).deliveryFee.replace("$", "")));
-                double sTotalPrice = Double.parseDouble(String.format("%.2f",totalPrice)) - Double.parseDouble(String.format("%.2f", deliveryFee));
-                ((ShopDetailsActivity)context).allTotalPrice = 0.00;
-                ((ShopDetailsActivity)context).sTotalTv.setText("$"+String.format("%.2f",sTotalPrice));
-                ((ShopDetailsActivity)context).allTotalPriceTv.setText("$"+String.format("%.2f",Double.parseDouble(String.format("%.2f",totalPrice))));
+                double tx = Double.parseDouble((((ShopDetailsActivity) context).allTotalPriceTv.getText().toString().trim().replace("$", "")));
+                double totalPrice = tx - Double.parseDouble(cost.replace("$", ""));
+                double deliveryFee = Double.parseDouble((((ShopDetailsActivity) context).deliveryFee.replace("$", "")));
+                double sTotalPrice = Double.parseDouble(String.format("%.2f", totalPrice)) - Double.parseDouble(String.format("%.2f", deliveryFee));
+                ((ShopDetailsActivity) context).allTotalPrice = 0.00;
+                ((ShopDetailsActivity) context).sTotalTv.setText("$" + String.format("%.2f", sTotalPrice));
+                ((ShopDetailsActivity) context).allTotalPriceTv.setText("$" + String.format("%.2f", Double.parseDouble(String.format("%.2f", totalPrice))));
+
+                //after removing item from cart, update cart count
+                ((ShopDetailsActivity)context).cartCount();
             }
         });
     }

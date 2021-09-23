@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -27,6 +28,8 @@ import com.example.grocery.adapters.AdapterCartItem;
 import com.example.grocery.adapters.AdapterProductUser;
 import com.example.grocery.models.ModelCartItem;
 import com.example.grocery.models.ModelProduct;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -36,6 +39,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import p32929.androideasysql_library.Column;
 import p32929.androideasysql_library.EasyDB;
@@ -44,17 +48,20 @@ public class ShopDetailsActivity extends AppCompatActivity {
 
     //declare ui views
     private ImageView shopIv;
-    private TextView shopNameTv, phoneTv, emailTv, openCloseTv, deliveryFeeTv, addressTv, filteredProductsTv;
-    private ImageButton callBtn, mapBtn, cartBtn, backBtn, filterProductBtn;
+    private TextView shopNameTv, phoneTv, emailTv, openCloseTv, deliveryFeeTv, addressTv, filteredProductsTv, cartCountTv;
+    private ImageButton callBtn, mapBtn, cartBtn, backBtn, filterProductBtn, reviewsBtn;
     private EditText searchProductEt;
     private RecyclerView productsRv;
 
     private String shopUid;
-    private String myLatitude, myLongitude;
+    private String myLatitude, myLongitude, myPhone;
     private String shopName, shopEmail, shopPhone, shopAddress, shopLatitude, shopLongitude;
     public String deliveryFee;
 
     private FirebaseAuth firebaseAuth;
+
+    //progress dialog
+    private ProgressDialog progressDialog;
 
     private ArrayList<ModelProduct> productsList;
     private AdapterProductUser adapterProductUser;
@@ -62,6 +69,8 @@ public class ShopDetailsActivity extends AppCompatActivity {
     //cart
     private ArrayList<ModelCartItem> cartItemList;
     private AdapterCartItem adapterCartItem;
+
+    private EasyDB easyDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +86,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         deliveryFeeTv = findViewById(R.id.deliveryFeeTv);
         addressTv = findViewById(R.id.addressTv);
         filteredProductsTv = findViewById(R.id.filteredProductsTv);
+        cartCountTv = findViewById(R.id.cartCountTv);
         callBtn = findViewById(R.id.callBtn);
         mapBtn = findViewById(R.id.mapBtn);
         cartBtn = findViewById(R.id.cartBtn);
@@ -84,6 +94,12 @@ public class ShopDetailsActivity extends AppCompatActivity {
         filterProductBtn = findViewById(R.id.filterProductBtn);
         searchProductEt = findViewById(R.id.searchProductEt);
         productsRv = findViewById(R.id.productsRv);
+        reviewsBtn = findViewById(R.id.reviewsBtn);
+
+        //init progress dialog
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle("Please wait");
+        progressDialog.setCanceledOnTouchOutside(false);
 
         //get uid of the shop from intent
         shopUid = getIntent().getStringExtra("shopUid");
@@ -93,9 +109,21 @@ public class ShopDetailsActivity extends AppCompatActivity {
         loadShopDetails();
         loadShopProducts();
 
+        //declare it to class level and init in onCreate
+        easyDB = EasyDB.init(this, "ITEMS_DB")
+                .setTableName("ITEMS_TABLE")
+                .addColumn(new Column("Item_Id", new String[]{"text", "unique"}))
+                .addColumn(new Column("Item_PID", new String[]{"text", "not null"}))
+                .addColumn(new Column("Item_Name", new String[]{"text", "not null"}))
+                .addColumn(new Column("Item_Price_Each", new String[]{"text", "not null"}))
+                .addColumn(new Column("Item_Price", new String[]{"text", "not null"}))
+                .addColumn(new Column("Item_Quantity", new String[]{"text", "not null"}))
+                .doneTableColumn();
+
         //each shop have its own  products and orders. So, if user add items to cart and go back and open cart in different shop --> then cart should be different
         //So, delete  cart data whenever user open this activity
         deleteCartData();
+        cartCount();//count cart items
 
         //search
         searchProductEt.addTextChangedListener(new TextWatcher() {
@@ -179,20 +207,37 @@ public class ShopDetailsActivity extends AppCompatActivity {
             }
         });
 
+        //handle reviewsBtn click, open reviews activity
+        reviewsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //pass shop uid to show it's reviews
+                Intent intent = new Intent(ShopDetailsActivity.this,ShopReviewsActivity.class);
+                intent.putExtra("shopUid",shopUid);
+                startActivity(intent);
+            }
+        });
+
     }
 
     private void deleteCartData() {
-        EasyDB easyDB = EasyDB.init(this, "ITEMS_DB")
-                .setTableName("ITEMS_TABLE")
-                .addColumn(new Column("Item_Id", new String[]{"text", "unique"}))
-                .addColumn(new Column("Item_PID", new String[]{"text", "not null"}))
-                .addColumn(new Column("Item_Name", new String[]{"text", "not null"}))
-                .addColumn(new Column("Item_Price_Each", new String[]{"text", "not null"}))
-                .addColumn(new Column("Item_Price", new String[]{"text", "not null"}))
-                .addColumn(new Column("Item_Quantity", new String[]{"text", "not null"}))
-                .doneTableColumn();
-
         easyDB.deleteAllDataFromTable(); //delete all records from cart
+    }
+
+    public void cartCount(){
+        //keep it public so we can access in adapter
+        //get cart count
+        int count = easyDB.getAllData().getCount();
+
+        if (count<=0){
+            //no item in cart, hide cart count badge
+            cartCountTv.setVisibility(View.GONE);
+
+        }else {
+            //items in cart, show cart count badge, and set count
+            cartCountTv.setVisibility(View.VISIBLE);
+            cartCountTv.setText(""+count);//concatenate with string, because we can't set integer in textview
+        }
     }
 
     public double allTotalPrice = 0.00;
@@ -274,7 +319,101 @@ public class ShopDetailsActivity extends AppCompatActivity {
             }
         });
 
+        //place order
+        checkoutBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //first validate delivery address
+                if (myLatitude.equals("") || myLatitude.equals("null") || myLongitude.equals("") || myLongitude.equals("null")){
+                    //user didn't enter address in profile
+                    Toast.makeText(ShopDetailsActivity.this, "Please enter your address in your profile before placing order...", Toast.LENGTH_SHORT).show();
+                    return; //don't proceed further
+                }
+                if (myPhone.equals("") || myPhone.equals("null")){
+                    //user didn't enter phone number in profile
+                    Toast.makeText(ShopDetailsActivity.this, "Please enter your phone number in your profile before placing order...", Toast.LENGTH_SHORT).show();
+                    return; //don't proceed further
+                }
+                if (cartItemList.size() == 0){
+                    //cart list is empty
+                    Toast.makeText(ShopDetailsActivity.this, "No item in cart", Toast.LENGTH_SHORT).show();
+                    return; //don't proceed further
+                }
 
+                submitOrder();
+            }
+        });
+    }
+
+    private void submitOrder() {
+        //show progress dialog
+        progressDialog.setMessage("Placing order....");
+        progressDialog.show();
+
+        //for order id and order time
+        String timestamp = ""+System.currentTimeMillis();
+        String cost = allTotalPriceTv.getText().toString().trim().replace("$","");//remove $ if contains
+
+        //add latitude, longitude of user to each order | delete previous orders from firebase or add manually to them
+
+
+        //setup order data
+        HashMap<String, String> hashMap = new HashMap<>();
+        hashMap.put("orderId", ""+timestamp);
+        hashMap.put("orderTime", ""+timestamp);
+        hashMap.put("orderStatus", "In Progress"); //In progress/Completed/Cancelled
+        hashMap.put("orderCost", ""+cost);
+        hashMap.put("orderBy", ""+firebaseAuth.getUid());
+        hashMap.put("orderTo", ""+shopUid);
+        hashMap.put("latitude", ""+myLatitude);
+        hashMap.put("longitude", ""+myLongitude);
+
+
+        //add to db
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users").child(shopUid).child("Orders");
+        ref.child(timestamp).setValue(hashMap)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        //order info added now add order items
+                        for (int i=0; i<cartItemList.size(); i++){
+
+                            String pId = cartItemList.get(i).getpId();
+                            String id = cartItemList.get(i).getId();
+                            String name = cartItemList.get(i).getName();
+                            String cost = cartItemList.get(i).getCost();
+                            String price = cartItemList.get(i).getPrice();
+                            String quantity = cartItemList.get(i).getQuantity();
+
+                            HashMap<String, String> hashMap1 = new HashMap<>();
+                            hashMap1.put("pId",""+pId);
+                            hashMap1.put("name",""+name);
+                            hashMap1.put("cost",""+cost);
+                            hashMap1.put("price",""+price);
+                            hashMap1.put("quantity",""+quantity);
+
+                            ref.child(timestamp).child("Items").child(pId).setValue(hashMap1);
+
+                        }
+                        progressDialog.dismiss();
+                        Toast.makeText(ShopDetailsActivity.this, "Order Placed Successfully...", Toast.LENGTH_SHORT).show();
+
+                        //after placing order open order details
+
+                        Intent intent = new Intent(ShopDetailsActivity.this, OrderDetailsUsersActivity.class);
+                        intent.putExtra("orderTo", shopUid);
+                        intent.putExtra("orderId", timestamp);
+                        startActivity(intent); //now get these values through intent on OrderDetailsUsersActivity
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        //failed placing order
+                        progressDialog.dismiss();
+                        Toast.makeText(ShopDetailsActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
 
     }
 
@@ -301,7 +440,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
                             //get user data
                             String name = ""+ds.child("name").getValue();
                             String email = ""+ds.child("email").getValue();
-                            String phone = ""+ds.child("phone").getValue();
+                            myPhone = ""+ds.child("phone").getValue();
                             String profileImage = ""+ds.child("profileImage").getValue();
                             String accountType = ""+ds.child("accountType").getValue();
                             String city = ""+ds.child("city").getValue();
