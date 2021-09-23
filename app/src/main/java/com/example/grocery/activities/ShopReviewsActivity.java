@@ -10,6 +10,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.grocery.R;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class ShopReviewsActivity extends AppCompatActivity {
 
@@ -19,6 +20,8 @@ public class ShopReviewsActivity extends AppCompatActivity {
     private TextView shopNameTv, ratingsTv;
     private RatingBar ratingBar;
     private RecyclerView reviewsRv;
+
+    private FirebaseAuth firebaseAuth;
 
     private String shopUid;
 
@@ -37,6 +40,14 @@ public class ShopReviewsActivity extends AppCompatActivity {
 
         //get shop uid from intent
         shopUid = getIntent().getStringExtra("shopUid");
+
+        firebaseAuth = FirebaseAuth.getInstance();
+
+        loadShopDetails(); //for shop name, image and avg rating
+
+    }
+
+    private void loadShopDetails() {
 
     }
 }
