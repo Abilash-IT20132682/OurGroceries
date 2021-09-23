@@ -1,16 +1,28 @@
 package com.example.grocery.activities;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.example.grocery.R;
+import com.example.grocery.adapters.AdapterReview;
+import com.example.grocery.models.ModelReview;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
 
 public class ShopReviewsActivity extends AppCompatActivity {
 
@@ -22,6 +34,9 @@ public class ShopReviewsActivity extends AppCompatActivity {
     private RecyclerView reviewsRv;
 
     private FirebaseAuth firebaseAuth;
+
+    private ArrayList<ModelReview> reviewArrayList; //will contains list of all received reviews
+    private AdapterReview adapterReview;
 
     private String shopUid;
 
@@ -43,11 +58,83 @@ public class ShopReviewsActivity extends AppCompatActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
 
-        loadShopDetails(); //for shop name, image and avg rating
+        loadShopDetails(); //for shop name, image
+        loadReviews(); //for reviews list, avg rating
+
+        backBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed(); //go to previous activity
+            }
+        });
 
     }
 
-    private void loadShopDetails() {
+    private float ratingSum = 0;
+    private void loadReviews() {
+        //init List
+        reviewArrayList = new ArrayList<>();
 
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        ref.child(shopUid).child("Ratings")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        //clear list before adding data into it
+                        reviewArrayList.clear();
+                        ratingSum = 0;
+                        for (DataSnapshot ds: snapshot.getChildren()){
+                            float rating = Float.parseFloat(""+ds.child("ratings").getValue());//e.g.4.3
+                            ratingSum = ratingSum +rating; //for avg rating, add all ratings, later will divide it by raters count
+
+                            ModelReview modelReview = ds.getValue(ModelReview.class);
+                            reviewArrayList.add(modelReview);
+                        }
+                        //setup adapter
+                        adapterReview = new AdapterReview(ShopReviewsActivity.this, reviewArrayList);
+
+                        //set to recyclerview
+                        reviewsRv.setAdapter(adapterReview);
+
+                        long numberOfReviews = snapshot.getChildrenCount();
+                        float avgRating = ratingSum/numberOfReviews;
+
+                        ratingsTv.setText(String.format("%.2f", avgRating) + " [" +numberOfReviews+ "]");//e.g. 4.3 [10]
+                        ratingBar.setRating(avgRating);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+    }
+
+    private void loadShopDetails() {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        ref.child(shopUid)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String shopName = ""+snapshot.child("shopName").getValue();
+                        String profileImage = ""+snapshot.child("profileImage").getValue();
+
+                        shopNameTv.setText(shopName);
+
+                        try {
+                            Picasso.get().load(profileImage).placeholder(R.drawable.ic_store_gray).into(profileIv);
+
+                        }catch (Exception e){
+                            //if anything goes wrong setting image
+                            profileIv.setImageResource(R.drawable.ic_store_gray);
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
     }
 }

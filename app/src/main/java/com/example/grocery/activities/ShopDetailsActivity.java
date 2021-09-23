@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,8 +27,10 @@ import com.example.grocery.Constants;
 import com.example.grocery.R;
 import com.example.grocery.adapters.AdapterCartItem;
 import com.example.grocery.adapters.AdapterProductUser;
+import com.example.grocery.adapters.AdapterReview;
 import com.example.grocery.models.ModelCartItem;
 import com.example.grocery.models.ModelProduct;
+import com.example.grocery.models.ModelReview;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -52,6 +55,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
     private ImageButton callBtn, mapBtn, cartBtn, backBtn, filterProductBtn, reviewsBtn;
     private EditText searchProductEt;
     private RecyclerView productsRv;
+    private RatingBar ratingBar;
 
     private String shopUid;
     private String myLatitude, myLongitude, myPhone;
@@ -95,6 +99,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         searchProductEt = findViewById(R.id.searchProductEt);
         productsRv = findViewById(R.id.productsRv);
         reviewsBtn = findViewById(R.id.reviewsBtn);
+        ratingBar = findViewById(R.id.ratingBar);
 
         //init progress dialog
         progressDialog = new ProgressDialog(this);
@@ -108,6 +113,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         loadMyInfo();
         loadShopDetails();
         loadShopProducts();
+        loadReviews(); // avg rating, set on ratingbar
 
         //declare it to class level and init in onCreate
         easyDB = EasyDB.init(this, "ITEMS_DB")
@@ -218,6 +224,35 @@ public class ShopDetailsActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private float ratingSum = 0;
+    private void loadReviews() {
+
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        ref.child(shopUid).child("Ratings")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        //clear list before adding data into it
+                        ratingSum = 0;
+                        for (DataSnapshot ds: snapshot.getChildren()){
+                            float rating = Float.parseFloat(""+ds.child("ratings").getValue());//e.g.4.3
+                            ratingSum = ratingSum +rating; //for avg rating, add all ratings, later will divide it by raters count
+
+                        }
+
+                        long numberOfReviews = snapshot.getChildrenCount();
+                        float avgRating = ratingSum/numberOfReviews;
+
+                        ratingBar.setRating(avgRating);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
     }
 
     private void deleteCartData() {

@@ -98,6 +98,8 @@ public class AdapterReview extends RecyclerView.Adapter<AdapterReview.HolderRevi
                 });
     }
 
+
+
     @Override
     public int getItemCount() {
         return reviewArrayList.size();//return list size

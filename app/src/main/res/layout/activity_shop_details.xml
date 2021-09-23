@@ -83,6 +83,19 @@
                 android:layout_marginLeft="3dp"
                 android:layout_alignParentRight="true" />
 
+            <!--Ratingbar: show avg rating-->
+            <RatingBar
+                android:id="@+id/ratingBar"
+                style="@style/Widget.AppCompat.RatingBar.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/deliveryFeeTv"
+                android:layout_alignParentEnd="true"
+                android:numStars="5"
+                android:layout_alignParentRight="true"
+                android:progressBackgroundTint="@color/colorGray00"
+                android:progressTint="@color/colorWhite"/>
+
             <TextView
                 android:id="@+id/addressTv"
                 android:layout_width="wrap_content"
