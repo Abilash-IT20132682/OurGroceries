@@ -39,12 +39,12 @@ import java.util.HashMap;
 
 public class MainSellerActivity extends AppCompatActivity {
 
-    private TextView nameTv, shopNameTv, emailTv, tabProductsTv, tabOrdersTv, filteredProductsTv;
+    private TextView nameTv, shopNameTv, emailTv, tabProductsTv, tabOrdersTv, filteredProductsTv, filteredOrdersTv;
     private EditText searchProductEt;
-    private ImageButton logoutBtn, editProfileBtn, addProductBtn, filterProductBtn, addPromotionBtn;//for my part//////////////////////////////
+    private ImageButton logoutBtn, editProfileBtn, addProductBtn, filterProductBtn, filterOrderBtn, addPromotionBtn;//for my part>>>>>>>>>>>>
     private ImageView profileIv;
     private RelativeLayout productsRl, ordersRl;
-    private RecyclerView productsRv;
+    private RecyclerView productsRv, ordersRv;
 
     private FirebaseAuth firebaseAuth;
     private ProgressDialog progressDialog;
@@ -73,7 +73,12 @@ public class MainSellerActivity extends AppCompatActivity {
         productsRl =findViewById(R.id.productsRl);
         ordersRl =findViewById(R.id.ordersRl);
         productsRv =findViewById(R.id.productsRv);
-        addPromotionBtn =findViewById(R.id.addPromotionBtn);//for my part///////////////////////////////////
+        filteredOrdersTv =findViewById(R.id.filteredOrdersTv);
+        filterOrderBtn =findViewById(R.id.filterOrderBtn);
+        ordersRv =findViewById(R.id.ordersRv);
+
+
+        addPromotionBtn =findViewById(R.id.addPromotionBtn);//for my part>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
         progressDialog = new ProgressDialog(this);

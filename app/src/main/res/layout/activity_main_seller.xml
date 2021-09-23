@@ -131,6 +131,7 @@
 
     <!--Products-->
     <RelativeLayout
+        android:visibility="gone"
         android:id="@+id/productsRl"
         android:layout_below="@+id/toolbarRl"
         android:layout_width="match_parent"
@@ -195,6 +196,41 @@
         android:layout_below="@+id/toolbarRl"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <!--Search/Filter-->
+        <TextView
+            android:id="@+id/filteredOrdersTv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@drawable/shape_rect02"
+            android:layout_toStartOf="@+id/filterOrderBtn"
+            android:padding="10dp"
+            android:text="Showing All Orders"
+            android:layout_toLeftOf="@+id/filterOrderBtn" />
+        <!--Filter Orders-->
+        <ImageButton
+            android:id="@+id/filterOrderBtn"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="5dp"
+            android:background="@null"
+            android:layout_marginRight="5dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_filter_gray"/>
+        <!--Show orders-->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/ordersRv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/filteredOrdersTv"
+            app:reverseLayout="true"
+            app:stackFromEnd="true"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
 
     </RelativeLayout>
 
