@@ -43,7 +43,7 @@ import java.util.HashMap;
 
 public class AddProductActivity extends AppCompatActivity {
 
-    //app ui views......
+    //ui views
     private ImageButton backBtn;
     private ImageView productIconIv;
     private EditText titleEt, descriptionEt, quantityEt, priceEt, discountedPriceEt, discountedNoteEt;
