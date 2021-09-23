@@ -19,8 +19,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.grocery.adapters.AdapterOrderShop;
 import com.example.grocery.adapters.AdapterProductSeller;
 import com.example.grocery.Constants;
+import com.example.grocery.models.ModelOrderShop;
 import com.example.grocery.models.ModelProduct;
 import com.example.grocery.R;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -51,6 +53,9 @@ public class MainSellerActivity extends AppCompatActivity {
 
     private ArrayList<ModelProduct> productList;
     private AdapterProductSeller adapterProductSeller;
+
+    private ArrayList<ModelOrderShop> orderShopArrayList;
+    private AdapterOrderShop adapterOrderShop;
 
 
     @Override
@@ -87,7 +92,8 @@ public class MainSellerActivity extends AppCompatActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
         checkUser();
-        loadAllProducts(); //----------------------------------------------------------------------------------->Error
+        loadAllProducts();
+        loadAllOrders();
 
         showProductsUI();
 
@@ -182,7 +188,36 @@ public class MainSellerActivity extends AppCompatActivity {
                 .show();
             }
         });
-         //my part//////////////////////////////////////////////////////////////////////////////////////
+
+        filterOrderBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //options to display in dialog
+                String[] options = {"All", "In Progress", "Completed", "Cancelled"};
+                //dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainSellerActivity.this);
+                builder.setTitle("Filter Orders:")
+                        .setItems(options, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                //handle item clicks
+                                if (which == 0){
+                                    //All clicked
+                                    filteredOrdersTv.setText("Showing All Orders");
+                                    adapterOrderShop.getFilter().filter("");//show all orders
+                                }else {
+                                    String optionClicked = options[which];
+                                    filteredOrdersTv.setText("Showing "+optionClicked+" Orders");
+                                    adapterOrderShop.getFilter().filter(optionClicked);
+                                }
+                            }
+                        })
+                        .show();
+            }
+        });
+
+
+         //my part>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         addPromotionBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -191,6 +226,39 @@ public class MainSellerActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void loadAllOrders() {
+        //init array list
+        orderShopArrayList = new ArrayList<>();
+
+        //load orders of shop
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        ref.child(firebaseAuth.getUid()).child("Orders")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        //clear list before adding new data
+                        orderShopArrayList.clear();
+                        for (DataSnapshot ds: snapshot.getChildren()){
+                            ModelOrderShop modelOrderShop = ds.getValue(ModelOrderShop.class);
+
+                            //add to list
+                            orderShopArrayList.add(modelOrderShop);
+                        }
+                        //setup adapter
+                        adapterOrderShop = new AdapterOrderShop(MainSellerActivity.this, orderShopArrayList);
+                        //set adapter to recyclerview
+                        ordersRv.setAdapter(adapterOrderShop);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+    }
+
+
 
     private void loadFilteredProducts(String selected) {
         productList = new ArrayList<>();
