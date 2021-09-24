@@ -36,7 +36,7 @@ import java.util.HashMap;
 public class MainUserActivity extends AppCompatActivity {
 
     private TextView nameTv, emailTv, phoneTv, tabShopsTv, tabOrdersTv;
-    private ImageButton logoutBtn, editProfileBtn;
+    private ImageButton logoutBtn, editProfileBtn, settingsBtn;
     private ImageView profileIv;
     private RelativeLayout shopsRl, ordersRl;
     private RecyclerView shopsRv, ordersRv;
@@ -68,6 +68,7 @@ public class MainUserActivity extends AppCompatActivity {
         ordersRl=findViewById(R.id.ordersRl);
         shopsRv=findViewById(R.id.shopsRv);
         ordersRv=findViewById(R.id.ordersRv);
+        settingsBtn=findViewById(R.id.settingsBtn);
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Please wait");
@@ -110,6 +111,14 @@ public class MainUserActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //show Orders
                 showOrdersUI();
+            }
+        });
+
+        //start setting screen
+        settingsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainUserActivity.this, SettingsActivity.class));
             }
         });
 
