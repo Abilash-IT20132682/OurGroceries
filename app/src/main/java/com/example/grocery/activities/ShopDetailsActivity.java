@@ -12,6 +12,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -38,6 +39,7 @@ import com.example.grocery.models.ModelProduct;
 import com.example.grocery.models.ModelReview;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -48,7 +50,10 @@ import com.squareup.picasso.Picasso;
 
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -285,7 +290,9 @@ public class ShopDetailsActivity extends AppCompatActivity {
 
     public double allTotalPrice = 0.00;
     //need to access these views in adapter so making public
-    public TextView sTotalTv, dFeeTv, allTotalPriceTv;
+    public TextView sTotalTv, dFeeTv, allTotalPriceTv, promoDescriptionTv, discountTv;
+    public EditText promoCodeEt;
+    public Button applyBtn;
     private void showCartDialog() {
         //init list
         cartItemList = new ArrayList<>();
@@ -294,11 +301,33 @@ public class ShopDetailsActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_cart, null);
         //init views
         TextView shopNameTv = view.findViewById(R.id.shopNameTv);
+
+        promoCodeEt = view.findViewById(R.id.promoCodeEt);//>>>>>>>>>>>>>>>>Promo Apply Section
+        promoDescriptionTv = view.findViewById(R.id.promoDescriptionTv);
+        discountTv = view.findViewById(R.id.discountTv);
+        FloatingActionButton validateBtn = view.findViewById(R.id.validateBtn);
+        applyBtn = view.findViewById(R.id.applyBtn);
+
         RecyclerView cartItemsRv = view.findViewById(R.id.cartItemsRv);
         sTotalTv = view.findViewById(R.id.sTotalTv);
         dFeeTv = view.findViewById(R.id.dFeeTv);
         allTotalPriceTv = view.findViewById(R.id.totalTv);
         Button checkoutBtn = view.findViewById(R.id.checkoutBtn);
+
+        //whenever cart  dialog shows, check if promo code is applied or not
+        if (isPromoCodeApplied){
+            //applied
+            promoDescriptionTv.setVisibility(View.VISIBLE);
+            applyBtn.setVisibility(View.VISIBLE);
+            applyBtn.setText("Applied");
+            promoCodeEt.setText(promoCode);
+            promoDescriptionTv.setText(promoDescription);
+        }else {
+            //not applied
+            promoDescriptionTv.setVisibility(View.GONE);
+            applyBtn.setVisibility(View.GONE);
+            applyBtn.setText("Apply");
+        }
 
         //dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -339,6 +368,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
             );
 
             cartItemList.add(modelCartItem);
+
         }
 
         //setup adapter
@@ -346,9 +376,11 @@ public class ShopDetailsActivity extends AppCompatActivity {
         //set to recycler view
         cartItemsRv.setAdapter(adapterCartItem);
 
-        dFeeTv.setText("$"+deliveryFee);
-        sTotalTv.setText("$"+String.format("%.2f", allTotalPrice));
-        allTotalPriceTv.setText("$"+(allTotalPrice + Double.parseDouble(deliveryFee.replace("$",""))));
+        if (isPromoCodeApplied){
+            priceWithDiscount();
+        }else {
+            priceWithoutDiscount();
+        }
 
         //show dialog
         AlertDialog dialog = builder.create();
@@ -386,8 +418,160 @@ public class ShopDetailsActivity extends AppCompatActivity {
                 submitOrder();
             }
         });
+
+        //start validating promo code when validate button is pressed
+        validateBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String promotionCode = promoCodeEt.getText().toString().trim();
+                if (TextUtils.isEmpty(promotionCode)){
+                    Toast.makeText(ShopDetailsActivity.this, "Please enter promo code...", Toast.LENGTH_SHORT).show();
+                }else {
+                    checkCodeAvailability(promotionCode);
+                }
+            }
+        });
+
+        //apply code if valid , no need to check if valid or not, because this button will be visible  only if the code is valid
+        applyBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isPromoCodeApplied = true;
+                applyBtn.setText("Applied");
+
+                priceWithDiscount();
+            }
+        });
     }
 
+    private void priceWithDiscount(){
+        discountTv.setText("$"+promoPrice);
+        dFeeTv.setText("$"+deliveryFee);
+        sTotalTv.setText("$" + String.format("%.2f", allTotalPrice));
+        allTotalPriceTv.setText("$" +(allTotalPrice + Double.parseDouble(deliveryFee.replace("$", "")) - Double.parseDouble(promoPrice)));
+    }
+
+
+    private void priceWithoutDiscount() {
+        discountTv.setText("$0");
+        dFeeTv.setText("$"+deliveryFee);
+        sTotalTv.setText("$" + String.format("%.2f", allTotalPrice));
+        allTotalPriceTv.setText("$" + (allTotalPrice + Double.parseDouble(deliveryFee.replace("$", ""))));
+    }
+
+
+    public boolean isPromoCodeApplied = false;
+    public String promoId, promoTimestamp, promoCode, promoDescription, promoExpDate, PromoMinimumOrderPrice, promoPrice;
+    private void checkCodeAvailability(String promotionCode){//promotionCode is promo code entered bu user
+        //progress bar
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle("Please wait");
+        progressDialog.setMessage("Checking Promo Code...");
+        progressDialog.setCanceledOnTouchOutside(false);
+
+        //promo is not applied yet
+        isPromoCodeApplied = false;
+        applyBtn.setText("Apply");
+        priceWithoutDiscount();
+
+        //check promo code availability
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Users");
+        ref.child(shopUid).child("Promotions").orderByChild("promoCode").equalTo(promotionCode)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        //check if promo code exists
+                        if (snapshot.exists()){
+                            //promo code exist
+                            progressDialog.dismiss();
+                            for (DataSnapshot ds: snapshot.getChildren()){
+                                promoId = ""+ds.child("id").getValue();
+                                promoTimestamp = ""+ds.child("timestamp").getValue();
+                                promoCode = ""+ds.child("promoCode").getValue();
+                                promoDescription = ""+ds.child("description").getValue();
+                                promoExpDate = ""+ds.child("expireDate").getValue();
+                                PromoMinimumOrderPrice = ""+ds.child("minimumOrderPrice").getValue();
+                                promoPrice = ""+ds.child("promoPrice").getValue();
+
+                                //now check if code is expired or not
+                                checkCodeExpireDate();
+                            }
+                        }else {
+                            //entered promo code doesn't exists
+                            progressDialog.dismiss();
+                            Toast.makeText(ShopDetailsActivity.this, "Invalid Promo Code...", Toast.LENGTH_SHORT).show();
+                            applyBtn.setVisibility(View.GONE);
+                            promoDescriptionTv.setVisibility(View.GONE);
+                            promoDescriptionTv.setText("");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+    }
+
+    private void checkCodeExpireDate() {
+        //get current date
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH) + 1; //it's start from 0 instead of 1.Therefore, i added by 1
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        //concatenate date
+        String  todayDate = day +"/" +month +"/" +year; //e,g.24/09.2021
+        
+        /*...........check for expiry ..........*/
+        try {
+            SimpleDateFormat sdformat = new SimpleDateFormat("dd/MM/yyyy");
+            Date currentDate = sdformat.parse(todayDate);
+            Date expireDate = sdformat.parse(promoExpDate);
+            
+            //compare dates
+            if (expireDate.compareTo(currentDate) > 0){
+                //date 1 occurs after date 2 (i.e. not expire date)
+                checkMinimumOrderPrice();
+            }else if (expireDate.compareTo(currentDate) < 0){
+                //date 1 occurs before date 2 (expired)
+                Toast.makeText(this, "The Promotion code is expired on "+promoExpDate, Toast.LENGTH_SHORT).show();
+                applyBtn.setVisibility(View.GONE);
+                promoDescriptionTv.setVisibility(View.GONE);
+                promoDescriptionTv.setText("");
+            }else if (expireDate.compareTo(currentDate) == 0){
+                //both dates are equal, (i.e. not expire date)
+                checkMinimumOrderPrice();
+            }
+            
+        }catch (Exception e){
+            //if anything goes wrong causing exception while comparing current date and expiry date
+            Toast.makeText(this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+            applyBtn.setVisibility(View.GONE);
+            promoDescriptionTv.setVisibility(View.GONE);
+            promoDescriptionTv.setText("");
+        }
+    }
+
+    private void checkMinimumOrderPrice() {
+        //each promo code have minimum order price requirement, if order price is less than required then don't allow to apply code
+        if (Double.parseDouble(String.format("%.2f", allTotalPrice)) < Double.parseDouble(PromoMinimumOrderPrice)){
+            //current order price is less than minimum order price required by promo code, so don't allow to apply
+            Toast.makeText(this, "This code is valid for order with minimum amount : $"+PromoMinimumOrderPrice, Toast.LENGTH_SHORT).show();
+            applyBtn.setVisibility(View.GONE);
+            promoDescriptionTv.setVisibility(View.GONE);
+            promoDescriptionTv.setText("");
+        }else {
+            //current  order price is equal or greater than minimum order price of the promo code, so allow to apply code
+            applyBtn.setVisibility(View.VISIBLE);
+            promoDescriptionTv.setVisibility(View.VISIBLE);
+            promoDescriptionTv.setText(promoDescription);
+        }
+    }
+
+
+    
+    
+    
     private void submitOrder() {
         //show progress dialog
         progressDialog.setMessage("Placing order....");
@@ -411,6 +595,14 @@ public class ShopDetailsActivity extends AppCompatActivity {
         hashMap.put("latitude", ""+myLatitude);
         hashMap.put("longitude", ""+myLongitude);
         hashMap.put("deliveryFee", ""+deliveryFee);
+        if (isPromoCodeApplied){
+            //promo applied
+            hashMap.put("discount", ""+promoPrice);//include promo price
+        }else {
+            //promo not applied, include price 0
+            hashMap.put("discount", "0");//
+        }
+
 
 
         //add to db
