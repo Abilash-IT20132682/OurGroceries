@@ -155,7 +155,7 @@ public class OrderDetailsUsersActivity extends AppCompatActivity {
                         //set data
                         orderIdTv.setText(orderId);
                         orderStatusTv.setText(orderStatus);
-                        amountTv.setText("$" + orderCost + "[Including delivery fee $"+deliveryFee+"]");
+                        amountTv.setText("$" + orderCost + " [Including delivery fee $ "+deliveryFee+" ]");
                         dateTv.setText(formatedDate);
 
                         findAddress(latitude, longitude);

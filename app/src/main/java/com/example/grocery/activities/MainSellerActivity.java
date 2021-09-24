@@ -11,10 +11,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,7 +45,7 @@ public class MainSellerActivity extends AppCompatActivity {
 
     private TextView nameTv, shopNameTv, emailTv, tabProductsTv, tabOrdersTv, filteredProductsTv, filteredOrdersTv;
     private EditText searchProductEt;
-    private ImageButton logoutBtn, editProfileBtn, addProductBtn, filterProductBtn, filterOrderBtn, reviewsBtn, settingsBtn;
+    private ImageButton logoutBtn, editProfileBtn, addProductBtn, filterProductBtn, filterOrderBtn, moreBtn;
     private ImageView profileIv;
     private RelativeLayout productsRl, ordersRl;
     private RecyclerView productsRv, ordersRv;
@@ -81,10 +83,7 @@ public class MainSellerActivity extends AppCompatActivity {
         filteredOrdersTv =findViewById(R.id.filteredOrdersTv);
         filterOrderBtn =findViewById(R.id.filterOrderBtn);
         ordersRv =findViewById(R.id.ordersRv);
-        reviewsBtn =findViewById(R.id.reviewsBtn);
-        settingsBtn =findViewById(R.id.settingsBtn);
-
-
+        moreBtn =findViewById(R.id.moreBtn);
 
 
 
@@ -218,21 +217,40 @@ public class MainSellerActivity extends AppCompatActivity {
             }
         });
 
-        reviewsBtn.setOnClickListener(new View.OnClickListener() {
+
+        //popup menu
+        PopupMenu popupMenu = new PopupMenu(MainSellerActivity.this, moreBtn);
+        //add menu items to our menue
+        popupMenu.getMenu().add("Settings");
+        popupMenu.getMenu().add("Reviews");
+        popupMenu.getMenu().add("Promotion Codes");
+
+        //handle menu item click
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
-            public void onClick(View v) {
-                //open same review activity as used in user main page
-                Intent intent = new Intent(MainSellerActivity.this, ShopReviewsActivity.class);
-                intent.putExtra("shopUid", "" + firebaseAuth.getUid());
-                startActivity(intent);
+            public boolean onMenuItemClick(MenuItem item) {
+                if (item.getTitle() == "Settings"){
+                    //start settings screen
+                    startActivity(new Intent(MainSellerActivity.this, SettingsActivity.class));
+                }else if (item.getTitle() == "Reviews"){
+                    //open same review activity as used in user main page
+                    Intent intent = new Intent(MainSellerActivity.this, ShopReviewsActivity.class);
+                    intent.putExtra("shopUid", "" + firebaseAuth.getUid());
+                    startActivity(intent);
+                } else if (item.getTitle() == "Promotion Codes"){
+                    //start promotions list screen
+                    startActivity(new Intent(MainSellerActivity.this, PromotionCodesActivity.class));
+                }
+                return true;
             }
         });
 
-        //start setting screen
-        settingsBtn.setOnClickListener(new View.OnClickListener() {
+
+        //show more options: settings, Reviews, Promotion codes
+        moreBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainSellerActivity.this, SettingsActivity.class));
+                popupMenu.show();
             }
         });
 
