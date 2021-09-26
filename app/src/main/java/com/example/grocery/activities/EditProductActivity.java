@@ -66,7 +66,7 @@ public class EditProductActivity extends AppCompatActivity {
     //permission arrays
     private String[] cameraPermissions;
     private String[] storagePermissions;
-    //image picked uri
+    //image picked_uri.
     private Uri image_uri;
 
     private FirebaseAuth firebaseAuth;
