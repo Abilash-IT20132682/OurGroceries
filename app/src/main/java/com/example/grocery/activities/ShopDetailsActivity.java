@@ -460,7 +460,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         allTotalPriceTv.setText("$" + (allTotalPrice + Double.parseDouble(deliveryFee.replace("$", ""))));
     }
 
-
+    //Promotion code section
     public boolean isPromoCodeApplied = false;
     public String promoId, promoTimestamp, promoCode, promoDescription, promoExpDate, PromoMinimumOrderPrice, promoPrice;
     private void checkCodeAvailability(String promotionCode){//promotionCode is promo code entered bu user
