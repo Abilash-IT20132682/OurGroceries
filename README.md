@@ -1,4 +1,4 @@
-#Mobile Application Development Group Project
+# Mobile Application Development Group Project
 
 # Project Name - OurGroceries
 # Batch - ITP2021_S2_B05_G06
