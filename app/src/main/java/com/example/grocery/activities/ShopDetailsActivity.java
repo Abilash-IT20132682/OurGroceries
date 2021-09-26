@@ -652,6 +652,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
 
     }
 
+    //to open the google map
     private void openMap() {
         //saddr means source address
         //daddr means destination address
