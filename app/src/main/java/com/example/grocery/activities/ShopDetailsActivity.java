@@ -186,6 +186,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
             }
         });
 
+        //Handle click of the call buttons
         callBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -193,6 +194,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
             }
         });
 
+        //Handle click of the map button
         mapBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
