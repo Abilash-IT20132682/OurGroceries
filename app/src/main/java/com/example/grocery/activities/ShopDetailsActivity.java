@@ -574,7 +574,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
 
     
     
-    
+    //To sumit the order
     private void submitOrder() {
         //show progress dialog
         progressDialog.setMessage("Placing order....");
