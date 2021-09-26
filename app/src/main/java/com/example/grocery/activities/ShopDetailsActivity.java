@@ -444,6 +444,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         });
     }
 
+    //This is used to calculate the price with discount
     private void priceWithDiscount(){
         discountTv.setText("$"+promoPrice);
         dFeeTv.setText("$"+deliveryFee);
@@ -451,7 +452,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         allTotalPriceTv.setText("$" +(allTotalPrice + Double.parseDouble(deliveryFee.replace("$", "")) - Double.parseDouble(promoPrice)));
     }
 
-
+    //This is used to calculate the price without discount
     private void priceWithoutDiscount() {
         discountTv.setText("$0");
         dFeeTv.setText("$"+deliveryFee);
