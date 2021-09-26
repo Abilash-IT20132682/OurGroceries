@@ -168,7 +168,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
             }
         });
 
-        //Handle click of the back button
+        //Handle click of the back button....
         backBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
