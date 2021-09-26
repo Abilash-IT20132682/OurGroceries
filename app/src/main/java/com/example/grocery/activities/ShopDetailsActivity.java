@@ -144,7 +144,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         deleteCartData();
         cartCount();//count cart items
 
-        //search
+        //search for .......
         searchProductEt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
