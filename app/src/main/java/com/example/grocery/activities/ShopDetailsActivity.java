@@ -554,6 +554,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
         }
     }
 
+    //This is for Check the minimum price of the promotion code
     private void checkMinimumOrderPrice() {
         //each promo code have minimum order price requirement, if order price is less than required then don't allow to apply code
         if (Double.parseDouble(String.format("%.2f", allTotalPrice)) < Double.parseDouble(PromoMinimumOrderPrice)){
