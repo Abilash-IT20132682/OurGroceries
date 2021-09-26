@@ -109,7 +109,7 @@ public class MainUserActivity extends AppCompatActivity {
         tabOrdersTv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //show Ordersui
+                //show Orders ui
                 showOrdersUI();
             }
         });
