@@ -514,6 +514,7 @@ public class ShopDetailsActivity extends AppCompatActivity {
                 });
     }
 
+    //This is used to check the expiry date of the promotion code
     private void checkCodeExpireDate() {
         //get current date
         Calendar calendar = Calendar.getInstance();
